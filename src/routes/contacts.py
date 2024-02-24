@@ -37,3 +37,9 @@ async def update_contact():
 @router.delete("/{contact_id}")
 async def delete_contact():
     pass
+
+
+@router.get("/birthday/", response_model=list[ContactResponse])
+async def get_birthday_contacts(db: AsyncSession = Depends(get_db)):
+    contacts = await repositories_contacts.get_birthday_users(db)
+    return contacts

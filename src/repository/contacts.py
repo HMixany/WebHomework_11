@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,14 +8,14 @@ from src.schemas.contact import ContactSchema
 
 async def get_contacts(limit: int, offset: int, db: AsyncSession):
     stmt = select(Contact).offset(offset).limit(limit)
-    todos = await db.execute(stmt)
-    return todos.scalars().all()
+    contacts = await db.execute(stmt)
+    return contacts.scalars().all()
 
 
 async def get_contact(contact_id: int, db: AsyncSession):
     stmt = select(Contact).filter_by(id=contact_id)
-    todo = await db.execute(stmt)
-    return todo.scalar_one_or_none()
+    contact = await db.execute(stmt)
+    return contact.scalar_one_or_none()
 
 
 async def create_contact(body: ContactSchema, db: AsyncSession):
@@ -25,9 +26,35 @@ async def create_contact(body: ContactSchema, db: AsyncSession):
     return contact
 
 
-async def update_contact(contact_id: int, db: AsyncSession):
-    pass
+async def update_contact(contact_id: int, body: ContactSchema, db: AsyncSession):
+    stmt = select(Contact).filter_by(id=contact_id)
+    result = await db.execute(stmt)
+    contact = result.scalar_one_or_none()
+    if contact:
+        contact.first_name = body.first_name
+        contact.last_name = body.last_name
+        contact.email = body.email
+        contact.phone = body.phone
+        contact.birthday = body.birthday
+        contact.description = body.description
+        await db.commit()
+        await db.refresh(contact)
+    return contact
 
 
 async def delete_contact(contact_id: int, db: AsyncSession):
-    pass
+    stmt = select(Contact).filter_by(id=contact_id)
+    result = await db.execute(stmt)
+    contact = result.scalar_one_or_none()
+    if contact:
+        await db.delete(contact)
+        await db.commit()
+    return contact
+
+
+async def get_birthday_users(db: AsyncSession):
+    today = date.today()
+    next_week = today + timedelta(days=7)
+    stmt = select(Contact).where(today >= Contact.birthday_this_year < next_week)
+    contacts = await db.execute(stmt)
+    return contacts.scalars().all()
