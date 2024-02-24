@@ -1,5 +1,5 @@
-from datetime import date, timedelta
-from sqlalchemy import select
+from datetime import datetime, date, timedelta
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.entity.models import Contact
@@ -55,6 +55,19 @@ async def delete_contact(contact_id: int, db: AsyncSession):
 async def get_birthday_users(db: AsyncSession):
     today = date.today()
     next_week = today + timedelta(days=7)
-    stmt = select(Contact).where(today >= Contact.birthday_this_year < next_week)
+    res = []
+    stmt = select(Contact)
+    results = await db.execute(stmt)
+    contacts = results.scalars().all()
+    for contact in contacts:
+        current_birthday = datetime(today.year, contact.birthday.month, contact.birthday.day).date()
+        if today <= current_birthday < next_week:
+            res.append(contact)
+    return res
+
+
+async def find_contacts(search: str, db: AsyncSession):
+    stmt = select(Contact).filter(or_(Contact.first_name.ilike(f"%{search}%"), Contact.last_name.ilike(f"%{search}%"),
+                                      Contact.email.ilike(f"%{search}%")))
     contacts = await db.execute(stmt)
     return contacts.scalars().all()
