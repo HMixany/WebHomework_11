@@ -1,6 +1,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
+from datetime import date
 
 
 # class OwnerSchema(BaseModel):
@@ -20,7 +21,7 @@ class ContactSchema(BaseModel):
     last_name: str = Field(min_length=3, max_length=120)
     email: EmailStr
     phone: str = Field(min_length=10, max_length=100)
-    birthday: str
+    birthday: date
     description: str = Field(min_length=3, max_length=250)
 
 
